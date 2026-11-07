@@ -1,0 +1,39 @@
+{
+  "name": "obsidian-brain-graph",
+  "version": "0.1.0",
+  "description": "Obsidian plugin: your vault's graph as a living brain of neurons, with PARA folders mapped to cortical lobes.",
+  "main": "main.js",
+  "scripts": {
+    "start": "node demo/serve.mjs",
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && vitest run && node esbuild.config.mjs production",
+    "test": "vitest run",
+    "lint": "eslint . --max-warnings 0",
+    "deploy": "node scripts/install-vault.mjs",
+    "link:vault": "node scripts/install-vault.mjs --link"
+  },
+  "keywords": [
+    "obsidian",
+    "graph",
+    "brain",
+    "para"
+  ],
+  "author": "David Peled",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/three": "^0.169.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-obsidianmd": "^0.5.1",
+    "globals": "^16.5.0",
+    "obsidian": "1.14.4",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "three": "^0.169.0"
+  }
+}

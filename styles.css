@@ -1,0 +1,287 @@
+.brain-graph-root.view-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.brain-graph-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  background: var(--background-primary);
+}
+
+/*
+ * Scene background behind the transparent WebGL canvas: a soft vignette built
+ * from the theme's own background, so community themes carry into the scene.
+ */
+.theme-dark .brain-graph-wrap {
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    color-mix(in srgb, var(--background-primary) 60%, #2c2058) 0%,
+    color-mix(in srgb, var(--background-primary) 55%, #000000) 55%,
+    color-mix(in srgb, var(--background-primary) 25%, #000000) 100%
+  );
+}
+
+.theme-light .brain-graph-wrap {
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    var(--background-primary) 0%,
+    color-mix(in srgb, var(--background-primary) 92%, #6b4f9e) 60%,
+    color-mix(in srgb, var(--background-primary) 84%, #6b4f9e) 100%
+  );
+}
+
+.brain-graph-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.brain-graph-canvas:active {
+  cursor: grabbing;
+}
+
+.brain-graph-canvas.is-hovering {
+  cursor: pointer;
+}
+
+.brain-graph-canvas:focus {
+  outline: none;
+}
+
+.brain-graph-canvas:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
+}
+
+.brain-graph-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.brain-graph-toolbar {
+  position: absolute;
+  top: var(--size-4-3);
+  right: var(--size-4-3);
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-1);
+  padding: var(--size-4-1);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: var(--shadow-s);
+}
+
+.brain-graph-search {
+  width: 180px;
+  height: 28px;
+  font-size: var(--font-ui-small);
+}
+
+/* Toolbar buttons are <button>s styled as Obsidian's clickable icons, not as form buttons. */
+.brain-graph-btn {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.brain-graph-btn.is-active {
+  color: var(--interactive-accent);
+}
+
+.brain-graph-btn:focus-visible,
+.brain-graph-legend-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus, var(--interactive-accent));
+}
+
+.brain-graph-stats {
+  position: absolute;
+  top: var(--size-4-3);
+  left: var(--size-4-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.brain-graph-stats-mode {
+  color: var(--text-faint);
+}
+
+.brain-graph-legend {
+  position: absolute;
+  left: var(--size-4-3);
+  bottom: var(--size-4-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 50%;
+  overflow-y: auto;
+  padding: var(--size-4-1);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: var(--shadow-s);
+}
+
+/* Legend rows are <button>s: reset the form-button look. */
+.brain-graph-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--size-4-2);
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 3px var(--size-4-2);
+  border: none;
+  border-radius: var(--radius-s);
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-ui-smaller);
+  text-align: left;
+  cursor: pointer;
+}
+
+.brain-graph-legend-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.brain-graph-legend-item.is-empty {
+  opacity: 0.45;
+}
+
+.brain-graph-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--dot-color);
+  box-shadow: 0 0 8px var(--dot-color);
+}
+
+.brain-graph-legend-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.brain-graph-legend-title {
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.brain-graph-legend-sub {
+  color: var(--text-faint);
+  font-size: 0.9em;
+}
+
+.brain-graph-legend-count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: var(--size-4-2);
+}
+
+.brain-graph-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 220px;
+  padding: var(--size-4-1) var(--size-4-2);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: var(--shadow-s);
+  font-size: var(--font-ui-smaller);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.brain-graph-tooltip.is-visible {
+  opacity: 1;
+}
+
+.brain-graph-tooltip-title {
+  font-weight: var(--font-semibold);
+  color: var(--text-normal);
+  word-break: break-word;
+}
+
+.brain-graph-tooltip-sub {
+  color: var(--text-muted);
+}
+
+.brain-graph-wrap.is-context-lost .brain-graph-canvas,
+.brain-graph-wrap.is-context-lost .brain-graph-overlay {
+  visibility: hidden;
+}
+
+.brain-graph-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(420px, calc(100% - 32px));
+  padding: var(--size-4-3) var(--size-4-4, 16px);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: var(--shadow-s);
+  text-align: center;
+}
+
+.brain-graph-message-title {
+  font-weight: var(--font-semibold);
+  color: var(--text-normal);
+  margin-bottom: var(--size-4-1);
+}
+
+.brain-graph-message-detail {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.brain-graph-message-error {
+  margin-top: var(--size-4-2);
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  word-break: break-word;
+}
+
+/* Hidden probes: the browser resolves the theme's colours for the 3D scene (dom/css-color.ts). */
+.brain-graph-probe-background,
+.brain-graph-probe-text {
+  display: none;
+}
+
+.brain-graph-probe-background {
+  color: var(--background-primary);
+}
+
+.brain-graph-probe-text {
+  color: var(--text-normal);
+}

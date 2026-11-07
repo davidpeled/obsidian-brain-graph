@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Obsidian's review rules and the layering, with no warnings allowed.
+      - run: npm run lint
+      # Type-check, unit + architecture tests (incl. the startup budget), production bundle within its size budget.
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brain-graph-plugin
+          path: |
+            main.js
+            manifest.json
+            styles.css
