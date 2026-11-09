@@ -1,4 +1,4 @@
-# Brain Graph for Obsidian
+# PARA Brain for Obsidian
 
 See your vault as a living brain. Every note is a **neuron** and every link is a **synapse**. Signals (action potentials) travel along the links and set off cascades through your knowledge.
 
@@ -108,7 +108,7 @@ npm run link:vault -- /path/to/vault   # development: relative symlink to this r
 npm run deploy -- /path/to/vault       # real copy of main.js, manifest.json, styles.css
 ```
 
-Both enable **Brain Graph** in the vault's `community-plugins.json`. With the link, `npm run dev` rebuilds straight into the vault; toggle the plugin off and on in Obsidian to load the change. Use the copy when the vault is synced to other devices, since a synced symlink points nowhere there.
+Both enable **PARA Brain** in the vault's `community-plugins.json`. With the link, `npm run dev` rebuilds straight into the vault; toggle the plugin off and on in Obsidian to load the change. Use the copy when the vault is synced to other devices, since a synced symlink points nowhere there.
 
 ## Roadmap
 

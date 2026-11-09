@@ -23,7 +23,7 @@ export class LabelOverlay {
     private readonly ui: Pick<UiHost, "fontFamily">
   ) {
     const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Brain graph: overlay 2D context unavailable");
+    if (!ctx) throw new Error("PARA Brain: overlay 2D context unavailable");
     this.ctx = ctx;
   }
 

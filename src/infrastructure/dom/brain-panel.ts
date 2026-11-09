@@ -54,7 +54,7 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
   canvas.setAttribute("role", "application");
   canvas.setAttribute(
     "aria-label",
-    `Brain graph. ${KEY_SHORTCUTS.orbit} rotate, ${KEY_SHORTCUTS.pan} pans, ${KEY_SHORTCUTS.zoom} zoom, ` +
+    `PARA Brain. ${KEY_SHORTCUTS.orbit} rotate, ${KEY_SHORTCUTS.pan} pans, ${KEY_SHORTCUTS.zoom} zoom, ` +
       `${KEY_SHORTCUTS.fit} fits the brain, ${KEY_SHORTCUTS.autoRotate} toggles auto-rotate, / searches.`
   );
   const overlay = el("canvas", "brain-graph-overlay", wrap);

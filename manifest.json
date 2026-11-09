@@ -1,7 +1,7 @@
 {
-  "id": "brain-graph",
-  "name": "Brain Graph",
-  "version": "0.1.0",
+  "id": "para-brain",
+  "name": "PARA Brain",
+  "version": "0.1.1",
   "minAppVersion": "1.4.0",
   "description": "Visualize your vault's graph as a brain of firing neurons. PARA folders (Projects, Areas, Resources, Archive) are mapped to cortical lobes.",
   "author": "David Peled",

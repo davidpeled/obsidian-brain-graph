@@ -34,4 +34,4 @@ async function serve(first, attempts = 10) {
 }
 
 const { port: actual } = await serve(port);
-console.log(`\n  🧠 Brain Graph demo running at http://localhost:${actual}\n`);
+console.log(`\n  🧠 PARA Brain demo running at http://localhost:${actual}\n`);

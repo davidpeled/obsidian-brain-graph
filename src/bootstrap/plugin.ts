@@ -9,7 +9,7 @@ import { BrainSettingTab } from "../infrastructure/obsidian/settings.tab";
 import { BrainContainer, createBrainContainer } from "./container";
 
 /** Obsidian entry point: binds the Obsidian adapters and registers the UI. */
-export default class BrainGraphPlugin extends Plugin {
+export default class ParaBrainPlugin extends Plugin {
   private container: BrainContainer | null = null;
 
   async onload(): Promise<void> {
@@ -23,7 +23,7 @@ export default class BrainGraphPlugin extends Plugin {
     this.container = container;
 
     this.registerView(VIEW_TYPE_BRAIN, (leaf) => new BrainView(leaf, (host) => container.mount(host)));
-    this.addRibbonIcon("brain", "Open brain graph", () => void this.activateView());
+    this.addRibbonIcon("brain", "Open PARA Brain", () => void this.activateView());
     this.addCommand({ id: "open-brain-graph", name: "Open view", callback: () => void this.activateView() });
     this.addCommand({ id: "regrow-brain-graph", name: "Regrow brain layout", callback: () => container.regrowAll() });
     this.addSettingTab(new BrainSettingTab(this.app, this, container.settings));
