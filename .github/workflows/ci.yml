@@ -22,7 +22,7 @@ jobs:
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
-          name: brain-graph-plugin
+          name: para-brain
           path: |
             main.js
             manifest.json

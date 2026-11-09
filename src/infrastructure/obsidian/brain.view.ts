@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import type { MountedPanel } from "../dom/brain-panel";
 
-export const VIEW_TYPE_BRAIN = "brain-graph-view";
+export const VIEW_TYPE_BRAIN = "para-brain-view";
 
 /** Thin Obsidian shell: hosts the DOM panel built by the composition root. */
 export class BrainView extends ItemView {
@@ -20,7 +20,7 @@ export class BrainView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "Brain graph";
+    return "PARA Brain";
   }
 
   getIcon(): string {
