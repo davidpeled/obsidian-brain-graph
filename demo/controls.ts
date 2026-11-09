@@ -21,7 +21,7 @@ export interface Controls {
 
 /** Create an element in `parent` with the given properties. */
 export function h<K extends keyof HTMLElementTagNameMap>(tag: K, parent: HTMLElement, props: Partial<HTMLElementTagNameMap[K]> = {}): HTMLElementTagNameMap[K] {
-  return parent.appendChild(Object.assign(document.createElement(tag), props));
+  return Object.assign(parent.createEl(tag), props);
 }
 
 export function createControls(root: HTMLElement): Controls {

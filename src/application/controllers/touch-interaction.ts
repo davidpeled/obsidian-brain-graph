@@ -1,3 +1,4 @@
+import type { Schedule } from "../contracts/schedule";
 import { DRAG_THRESHOLD } from "./pointer-interaction";
 import { PinchGesture, type PinchDelta } from "./pinch-gesture";
 
@@ -17,9 +18,6 @@ export interface ScreenPoint {
   clientX: number;
   clientY: number;
 }
-
-/** Starts a timer and returns its canceller. Injected so tests control time. */
-export type Schedule = (fn: () => void, ms: number) => () => void;
 
 /** Hold a finger this long (ms) on a neuron for its context menu. */
 export const LONG_PRESS_MS = 500;

@@ -17,12 +17,8 @@ export interface MountedPanel {
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, parent: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
-  // Create in the parent's document so the panel works in Obsidian popout windows.
-  const e = parent.ownerDocument.createElement(tag);
-  e.className = cls;
-  if (text) e.textContent = text;
-  parent.appendChild(e);
-  return e;
+  // `createEl` creates in the parent's document, so the panel works in Obsidian popout windows.
+  return parent.createEl(tag, { cls, text });
 }
 
 /**

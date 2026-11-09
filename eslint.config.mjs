@@ -76,30 +76,20 @@ export default defineConfig([
     },
   },
 
-  // Timers in domain/application are plain JS: `window.setTimeout` would break
-  // the no-DOM rule above, and popouts don't matter to them.
-  {
-    files: ["src/domain/**/*.ts", "src/application/**/*.ts"],
-    rules: { "obsidianmd/prefer-window-timers": "off" },
-  },
-
   // Obsidian rules that don't fit this plugin.
   {
     rules: {
-      // The declarative settings API needs Obsidian 1.13; minAppVersion is 1.4.
+      // The declarative settings API needs Obsidian 1.13; minAppVersion is 1.7.2.
       "obsidianmd/settings-tab/prefer-setting-definitions": "off",
     },
   },
 
   // The browser demo and its plain-DOM adapters never run inside Obsidian, so
-  // Obsidian's DOM helpers and popout-window rules don't apply.
+  // there is no popout window and `document` is the active document. (They still use
+  // Obsidian's createEl helpers and window timers; demo/obsidian-dom.ts provides createEl.)
   {
     files: ["demo/**/*.ts", "src/infrastructure/dom/dom-context-menu.ts", "src/infrastructure/dom/dom-ui-host.ts"],
-    rules: {
-      "obsidianmd/prefer-active-doc": "off",
-      "obsidianmd/prefer-create-el": "off",
-      "obsidianmd/prefer-window-timers": "off",
-    },
+    rules: { "obsidianmd/prefer-active-doc": "off" },
   },
 
   // Node scripts (build, dev server, vault install): not plugin code.

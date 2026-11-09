@@ -1,3 +1,4 @@
+import type { Schedule } from "../contracts/schedule";
 import type { Pt3 } from "../../domain/contracts/anatomy";
 import type { BrainGraphService, BrainState } from "../../domain/contracts/brain-graph.contract";
 import type { SettingsService } from "../contracts/settings";
@@ -18,6 +19,8 @@ export interface BrainGraphDeps {
   random: RandomSource;
   /** Debounce for vault change bursts. */
   refreshDelayMs: number;
+  /** Timer for that debounce. */
+  schedule: Schedule;
 }
 
 /** Keep a brain size unless it must change by more than this fraction (avoids jitter). */
@@ -88,10 +91,10 @@ export function createBrainGraphService(deps: BrainGraphDeps): BrainGraphService
   const notify = (s: BrainState) => watchers.forEach((w) => w(s));
 
   function subscribe(): () => void {
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let cancelRefresh: (() => void) | undefined;
     const offVault = deps.vault.onChange(() => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
+      cancelRefresh?.();
+      cancelRefresh = deps.schedule(() => {
         // Obsidian reports a change after every edit; most edits touch no
         // note, folder or link, so the brain stays exactly as it is.
         const snapshot = deps.vault.snapshot();
@@ -103,7 +106,7 @@ export function createBrainGraphService(deps: BrainGraphDeps): BrainGraphService
       if (structural) notify(rebuild(false));
     });
     return () => {
-      clearTimeout(timer);
+      cancelRefresh?.();
       offVault();
       offSettings();
     };

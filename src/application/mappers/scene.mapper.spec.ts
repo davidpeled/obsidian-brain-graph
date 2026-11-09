@@ -1,3 +1,4 @@
+import { realSchedule } from "../../test-support/schedule";
 import { describe, expect, it, vi } from "vitest";
 import { InMemorySettingsRepository } from "../../infrastructure/in-memory/in-memory-settings.repository";
 import { InMemoryVaultRepository } from "../../infrastructure/in-memory/in-memory-vault.repository";
@@ -13,7 +14,7 @@ import { FrameBuffer, toGraphView } from "./scene.mapper";
 
 async function setup() {
   const settings = await createSettingsService(new InMemorySettingsRepository({ ambientFiring: false, autoRotate: false }));
-  const graph = createBrainGraphService({ vault: new InMemoryVaultRepository(PARA_VAULT), settings, random: mulberry32(1), refreshDelayMs: 10 });
+  const graph = createBrainGraphService({ vault: new InMemoryVaultRepository(PARA_VAULT), settings, random: mulberry32(1), refreshDelayMs: 10, schedule: realSchedule });
   const controller = new BrainController({ graph, settings, workspace: new InMemoryWorkspaceGateway(), menu: new InMemoryContextMenu() });
   controller.resize(1000, 760);
   return { graph, controller };

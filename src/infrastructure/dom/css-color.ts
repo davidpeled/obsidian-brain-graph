@@ -51,9 +51,7 @@ export function resolveCssColor(el: HTMLElement, cssVar: keyof typeof PROBES): R
   const win = el.ownerDocument.defaultView;
   if (!win || !win.getComputedStyle(el).getPropertyValue(cssVar).trim()) return null;
   // Let the browser compute it: a hidden probe whose colour is the variable.
-  const probe = el.ownerDocument.createElement("span");
-  probe.className = PROBES[cssVar];
-  el.appendChild(probe);
+  const probe = el.createSpan({ cls: PROBES[cssVar] });
   const color = win.getComputedStyle(probe).color;
   probe.remove();
   return parseCssColor(color);
