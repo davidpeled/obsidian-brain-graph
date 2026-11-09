@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PARA_VAULT, vault } from "../test-support/fixtures";
+import { realSchedule } from "../test-support/schedule";
 import { boundsOf, regionBit } from "../domain/contracts/anatomy";
 import { InMemoryContextMenu } from "../infrastructure/in-memory/in-memory-context-menu";
 import { InMemorySettingsRepository } from "../infrastructure/in-memory/in-memory-settings.repository";
@@ -16,7 +17,7 @@ async function setup(snapshot = PARA_VAULT) {
   const vaultRepo = new InMemoryVaultRepository(snapshot);
   const workspace = new InMemoryWorkspaceGateway();
   const menu = new InMemoryContextMenu();
-  const graph = createBrainGraphService({ vault: vaultRepo, settings, random: mulberry32(1), refreshDelayMs: 100 });
+  const graph = createBrainGraphService({ vault: vaultRepo, settings, random: mulberry32(1), refreshDelayMs: 100, schedule: realSchedule });
   const controller = new BrainController({ graph, settings, workspace, menu });
   controller.resize(1000, 760);
   return { repo, settings, vaultRepo, workspace, menu, graph, controller };

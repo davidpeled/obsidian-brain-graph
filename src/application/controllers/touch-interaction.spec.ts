@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PinchDelta } from "./pinch-gesture";
-import { LONG_PRESS_MS, Schedule, TouchHost, TouchInteraction } from "./touch-interaction";
+import type { Schedule } from "../contracts/schedule";
+import { LONG_PRESS_MS, TouchHost, TouchInteraction } from "./touch-interaction";
 
 /** A controllable clock: `advance` runs timers that are due and not cancelled. */
 function setup(menuShown = true) {

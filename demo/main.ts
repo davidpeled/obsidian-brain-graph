@@ -1,3 +1,4 @@
+import "./obsidian-dom"; // before anything that mounts DOM: Obsidian's createEl helpers
 import "../styles.css";
 import "./demo.css";
 import { createBrainContainer } from "../src/bootstrap/container";
@@ -52,9 +53,9 @@ const container = await createBrainContainer({
 const settings = container.settings;
 
 const toast = (msg: string) => {
-  const t = document.body.appendChild(Object.assign(document.createElement("div"), { className: "demo-toast", textContent: msg }));
-  setTimeout(() => t.classList.add("is-leaving"), 1600);
-  setTimeout(() => t.remove(), 2000);
+  const t = document.body.createDiv({ cls: "demo-toast", text: msg });
+  window.setTimeout(() => t.classList.add("is-leaving"), 1600);
+  window.setTimeout(() => t.remove(), 2000);
 };
 workspace.onActiveNoteChanged((path) => {
   const last = workspace.opened[workspace.opened.length - 1];
@@ -191,9 +192,9 @@ const countFrames = (t: number) => {
     frames = 0;
     last = t;
   }
-  requestAnimationFrame(countFrames);
+  window.requestAnimationFrame(countFrames);
 };
-requestAnimationFrame(countFrames);
+window.requestAnimationFrame(countFrames);
 
 document.getElementById("collapse")?.addEventListener("click", () => document.body.classList.toggle("panel-hidden"));
 
@@ -204,11 +205,11 @@ applyTheme();
 const lose = new URLSearchParams(location.search).get("loseContext");
 if (lose) {
   const [at, restoreAfter] = lose.split(",").map(Number);
-  setTimeout(() => {
+  window.setTimeout(() => {
     const gl = document.querySelector<HTMLCanvasElement>(".brain-graph-canvas")?.getContext("webgl2");
     const ext = gl?.getExtension("WEBGL_lose_context");
     ext?.loseContext();
-    if (ext && restoreAfter) setTimeout(() => ext.restoreContext(), restoreAfter);
+    if (ext && restoreAfter) window.setTimeout(() => ext.restoreContext(), restoreAfter);
   }, at);
 }
 
