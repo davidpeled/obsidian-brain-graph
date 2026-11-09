@@ -1,8 +1,15 @@
 import { BrainController, KEY_SHORTCUTS } from "../../application/controllers/brain.controller";
+import { TouchInteraction } from "../../application/controllers/touch-interaction";
 import type { SettingsService } from "../../application/contracts/settings";
 import type { Unsubscribe } from "../../domain/contracts/vault";
 import { WebGLBrainRenderer } from "../webgl/webgl.renderer";
 import type { UiHost } from "./ui-host";
+
+/** Render at most this many device pixels per CSS pixel (phones have 3x screens: 9 pixels per CSS pixel is wasted on glowing dots). */
+const MAX_PIXEL_RATIO = 4;
+const MOBILE_MAX_PIXEL_RATIO = 2;
+/** Narrow panels (phones, split panes) hide the legend behind a toggle. */
+const COMPACT_WIDTH = 560;
 
 export interface MountedPanel {
   readonly controller: BrainController;
@@ -39,6 +46,8 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
   };
 
   const wrap = el("div", "brain-graph-wrap", host);
+  const mobile = ui.isMobile();
+  wrap.classList.toggle("is-mobile", mobile);
   const canvas = el("canvas", "brain-graph-canvas", wrap);
   // Focusable so the keyboard can drive the camera (see controller.keyDown).
   canvas.tabIndex = 0;
@@ -115,6 +124,12 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
   button("refresh-cw", "Regrow layout", () => controller.regrow());
   const firingBtn = button("activity", "Ambient firing", () => void controller.toggleAmbientFiring());
   const rotateBtn = button("rotate-3d", "Auto-rotate", () => void controller.toggleAutoRotate(), KEY_SHORTCUTS.autoRotate);
+  // Only shown in narrow panels (CSS): the legend is collapsed there to leave room for the brain.
+  const legendBtn = button("list", "Legend", () => {
+    const open = wrap.classList.toggle("is-legend-open");
+    setPressed(legendBtn, open);
+  });
+  legendBtn.classList.add("brain-graph-legend-toggle");
   const setPressed = (b: HTMLElement, on: boolean) => {
     b.classList.toggle("is-active", on);
     b.setAttribute("aria-pressed", String(on));
@@ -124,6 +139,7 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
     setPressed(rotateBtn, settings.get().autoRotate);
   };
   syncToggles();
+  setPressed(legendBtn, false);
   offs.push(settings.onChange(syncToggles));
 
   on(search, "input", () => controller.search(search.value));
@@ -179,9 +195,10 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
       canvas.classList.toggle("is-hovering", !!t);
     })
   );
-  const placeTooltip = (e: PointerEvent) => {
-    const x = Math.min(e.offsetX + 14, wrap.clientWidth - 220);
-    const y = Math.min(e.offsetY + 14, wrap.clientHeight - 70);
+  const placeTooltip = (e: PointerEvent, touch = false) => {
+    // Under a finger the tooltip would sit beneath the hand: put it above the touch point instead.
+    const x = Math.max(0, Math.min(e.offsetX + 14, wrap.clientWidth - 220));
+    const y = touch ? Math.max(0, e.offsetY - 90) : Math.min(e.offsetY + 14, wrap.clientHeight - 70);
     tooltip.style.transform = `translate(${x}px, ${y}px)`;
   };
 
@@ -197,21 +214,41 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
     if (controller.keyDown(e.key, e.shiftKey)) e.preventDefault();
   });
 
-  // Pointer input.
+  // Pointer input. Mouse goes straight to the controller; touch goes through TouchInteraction
+  // (pinch / two-finger pan, tap-to-select, long-press), which holds the policy and is unit-tested.
+  const touch = new TouchInteraction(controller, (fn, ms) => {
+    const handle = win.setTimeout(fn, ms);
+    return () => win.clearTimeout(handle);
+  });
+  offs.push(() => touch.dispose());
+
   on(canvas, "pointerdown", (e) => {
     canvas.setPointerCapture(e.pointerId);
-    controller.pointerDown(e.offsetX, e.offsetY, e.button, e.shiftKey);
+    if (e.pointerType === "touch") touch.down(e.pointerId, e.offsetX, e.offsetY, e);
+    else controller.pointerDown(e.offsetX, e.offsetY, e.button, e.shiftKey);
   });
   on(canvas, "pointermove", (e) => {
+    if (e.pointerType === "touch") return touch.move(e.pointerId, e.offsetX, e.offsetY);
     controller.pointerMove(e.offsetX, e.offsetY);
     if (controller.hovering) placeTooltip(e);
   });
   on(canvas, "pointerup", (e) => {
     if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
-    controller.pointerUp(e.metaKey || e.ctrlKey);
+    if (e.pointerType !== "touch") return controller.pointerUp(e.metaKey || e.ctrlKey);
+    if (touch.up(e.pointerId) && controller.hovering) placeTooltip(e, true);
   });
-  on(canvas, "pointerleave", () => controller.pointerLeave());
-  on(canvas, "pointercancel", () => controller.pointerCancel());
+  // A touch "leaves" the canvas right after it lifts; that must not clear the selection.
+  on(canvas, "pointerleave", (e) => {
+    if (e.pointerType !== "touch") controller.pointerLeave();
+  });
+  on(canvas, "pointercancel", (e) => {
+    if (e.pointerType === "touch") touch.cancel(e.pointerId);
+    else controller.pointerCancel();
+  });
+  // A touch anywhere else (toolbar, legend, another pane) drops the tap selection.
+  on(host.ownerDocument.documentElement, "pointerdown", (e) => {
+    if (e.pointerType === "touch" && e.target !== canvas) controller.deselect();
+  });
   on(
     canvas,
     "wheel",
@@ -223,6 +260,8 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
   );
   on(canvas, "dblclick", (e) => controller.doubleClick(e.offsetX, e.offsetY));
   on(canvas, "contextmenu", (e) => {
+    // Touch long-press is handled above (Android also fires a contextmenu event for it).
+    if (e.pointerType === "touch" || touch.ownsContextMenu) return e.preventDefault();
     if (controller.contextMenu(e.offsetX, e.offsetY, e)) e.preventDefault();
   });
 
@@ -231,7 +270,8 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
     const w = Math.floor(wrap.clientWidth);
     const h = Math.floor(wrap.clientHeight);
     if (!w || !h) return;
-    renderer.resize(w, h, win.devicePixelRatio || 1);
+    renderer.resize(w, h, Math.min(win.devicePixelRatio || 1, mobile ? MOBILE_MAX_PIXEL_RATIO : MAX_PIXEL_RATIO));
+    wrap.classList.toggle("is-compact", w < COMPACT_WIDTH);
     controller.resize(w, h);
   };
   const observer = new win.ResizeObserver(resize);

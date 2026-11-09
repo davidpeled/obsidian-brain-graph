@@ -10,6 +10,7 @@ export const UNICODE_ICONS: Record<string, string> = {
   "file-text": "📄",
   "file-plus": "＋",
   "zoom-in": "🔍",
+  list: "☰",
 };
 
 /** UiHost for a plain web page: theme from a body class, unicode icons. */
@@ -18,6 +19,11 @@ export class DomUiHost implements UiHost {
 
   isDark(): boolean {
     return document.body.classList.contains("theme-dark");
+  }
+
+  /** A touch-only device (no hover), or `?mobile` in the URL to try the mobile layout on a desktop. */
+  isMobile(): boolean {
+    return new URLSearchParams(window.location.search).has("mobile") || window.matchMedia("(pointer: coarse) and (hover: none)").matches;
   }
 
   themeColors(el: HTMLElement): ThemeColors | null {

@@ -9,6 +9,10 @@
   height: 100%;
   overflow: hidden;
   user-select: none;
+  -webkit-user-select: none;
+  /* No iOS callout / text-selection loupe on long-press: that gesture opens the neuron menu. */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
   background: var(--background-primary);
 }
 
@@ -284,4 +288,75 @@
 
 .brain-graph-probe-text {
   color: var(--text-normal);
+}
+
+/* The legend toggle only exists for narrow panels. */
+.brain-graph-legend-toggle {
+  display: none;
+}
+
+/*
+ * Touch: finger-sized targets through one variable. `is-mobile` is set from the
+ * platform (Obsidian's phone and tablet apps); the media query covers touch
+ * laptops and the demo.
+ */
+.brain-graph-wrap.is-mobile {
+  --brain-graph-target: 40px;
+}
+
+@media (pointer: coarse) {
+  .brain-graph-wrap {
+    --brain-graph-target: 40px;
+  }
+}
+
+.brain-graph-btn,
+.brain-graph-search,
+.brain-graph-legend-item {
+  min-height: var(--brain-graph-target, 0);
+}
+
+.brain-graph-btn {
+  min-width: var(--brain-graph-target, 0);
+}
+
+/*
+ * Narrow panels (phones, split panes): the toolbar spans the width with a
+ * flexible search box, the stats drop below it, and the legend sits behind a
+ * toggle instead of covering the brain.
+ */
+.brain-graph-wrap.is-compact .brain-graph-toolbar {
+  left: var(--size-4-2);
+  right: var(--size-4-2);
+  top: var(--size-4-2);
+}
+
+.brain-graph-wrap.is-compact .brain-graph-search {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.brain-graph-wrap.is-compact .brain-graph-legend-toggle {
+  display: inline-flex;
+}
+
+.brain-graph-wrap.is-compact .brain-graph-stats {
+  top: calc(var(--size-4-2) + 52px);
+  left: var(--size-4-3);
+}
+
+.brain-graph-wrap.is-compact .brain-graph-legend {
+  display: none;
+  left: var(--size-4-2);
+  right: var(--size-4-2);
+  max-height: 40%;
+}
+
+.brain-graph-wrap.is-compact.is-legend-open .brain-graph-legend {
+  display: flex;
+}
+
+.brain-graph-wrap.is-compact .brain-graph-legend-title {
+  max-width: none;
 }

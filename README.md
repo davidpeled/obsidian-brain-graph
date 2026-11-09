@@ -41,6 +41,7 @@ The brain is fully 3D: a translucent shell tinted by lobe, with neurons, synapse
 
 - **Drag** the background to rotate, **Shift-drag** (or middle-drag) to pan, and scroll or pinch to zoom toward the cursor. Double-click empty space to fit the brain.
 - It **auto-rotates** slowly when idle. Toggle this with ⟲ in the toolbar or in settings.
+- **On touch:** drag to rotate, pinch to zoom, two fingers to pan. Tap a neuron to select it, tap it again to open the note, and long-press it for the menu.
 - **Hover** a neuron to highlight its synapses; it keeps firing into its neighbors.
 - **Click** to fire a cascade and open the note (Cmd/Ctrl-click opens it in a new tab).
 - **Drag a neuron** to move it in the screen plane. It can't leave its lobe.
@@ -113,15 +114,15 @@ Both enable **Brain Graph** in the vault's `community-plugins.json`. With the li
 
 ### Goal: mobile support
 
-The plugin is meant to work in the Obsidian phone and tablet apps too. The code already allows it: `isDesktopOnly` is `false`, it uses no Node or Electron APIs, and WebGL runs in Obsidian mobile. One-finger drag already rotates the brain. It hasn't been tested on a device yet, and these are still missing:
+The plugin is meant to work in the Obsidian phone and tablet apps too. `isDesktopOnly` is `false` and it uses no Node or Electron APIs. Touch input, the lighter mesh and the compact layout are implemented and unit-tested, but **nothing has been run on a real device yet**.
 
-- [ ] **Pinch to zoom and two-finger pan.** Today, zoom only reacts to the scroll wheel, and panning needs Shift-drag or the middle mouse button.
-- [ ] **Tap to select, tap again to open.** Touch has no hover, so the first tap should show the tooltip and highlight the neuron's synapses instead of opening the note right away.
-- [ ] **Long-press for the context menu.** It currently depends on right-click.
-- [ ] **Larger touch targets.** The hit area is sized for a mouse pointer.
-- [ ] **A lighter brain mesh on mobile.** Building the surface at 128³ takes a few hundred milliseconds on a Mac and could take a second or two the first time on a phone.
-- [ ] **A compact toolbar and legend** for narrow screens.
-- [ ] **Testing:** the browser demo with mobile emulation, then a real device, installed with `npm run deploy` (a symlink doesn't sync to the phone).
+- [x] **Pinch to zoom and two-finger pan.**
+- [x] **Tap to select, tap again to open.** The first tap shows the tooltip and highlights the neuron's synapses; a second tap on it opens the note. Tapping empty space clears the selection.
+- [x] **Long-press for the context menu.**
+- [x] **Larger touch targets:** a finger-sized hit area on the brain, and 40 px toolbar buttons and legend rows on touch devices. A one-finger drag always rotates, even when it starts on a neuron (neurons can't be dragged by touch).
+- [x] **A lighter brain mesh on mobile:** the shell is built at 96³ instead of 128³ (about 40% less work), and the render pixel ratio is capped at 2.
+- [x] **A compact toolbar and legend** for panels narrower than 560 px: the search box stretches, and the legend sits behind a toggle button.
+- [ ] **Testing:** try the browser demo with `?mobile` in the URL and your browser's device emulation (it forces the mobile mesh and layout), then a real phone and tablet, installed with `npm run deploy` (a symlink doesn't sync to the phone).
 
 ## License
 

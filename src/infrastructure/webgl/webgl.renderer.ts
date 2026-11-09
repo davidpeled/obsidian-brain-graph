@@ -24,7 +24,7 @@ import { WORLD_UP } from "../../application/controllers/orbit-camera";
 import type { RGB } from "../../application/mappers/palette.mapper";
 import { REGION_COUNT } from "../../domain/contracts/anatomy";
 import type { UiHost } from "../dom/ui-host";
-import { brainSurface } from "./brain-mesh";
+import { SHELL_RESOLUTION, brainSurface } from "./brain-mesh";
 import { LabelOverlay } from "./label-overlay";
 import { glowMaterial, rimMaterial } from "./materials";
 import { DARK_3D, Theme3D, sceneTheme } from "./theme";
@@ -143,10 +143,15 @@ export class WebGLBrainRenderer {
   private rgbFor: unknown = null;
   private readonly c = new Color();
 
+  /** Shell grid for this platform: phones build a coarser one. */
+  private get shellResolution(): number {
+    return this.ui.isMobile() ? SHELL_RESOLUTION.mobile : SHELL_RESOLUTION.desktop;
+  }
+
   constructor(
     private readonly canvas: HTMLCanvasElement,
     overlayCanvas: HTMLCanvasElement,
-    private readonly ui: Pick<UiHost, "isDark" | "themeColors" | "fontFamily">
+    private readonly ui: Pick<UiHost, "isDark" | "isMobile" | "themeColors" | "fontFamily">
   ) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.renderer.setClearColor(0x000000, 0);
@@ -161,7 +166,7 @@ export class WebGLBrainRenderer {
     this.camera.add(fill);
     this.scene.add(this.camera);
 
-    const surface = brainSurface();
+    const surface = brainSurface(this.shellResolution);
     this.shellFill = new Mesh(
       surface.geometry,
       new MeshStandardMaterial({ vertexColors: true, transparent: true, depthWrite: false, roughness: 0.45, metalness: 0, side: FrontSide })
@@ -241,7 +246,7 @@ export class WebGLBrainRenderer {
     // Shell: lobe tints, brighter where notes live, blended across borders.
     this.shellFill.scale.setScalar(graph.volume.W);
     this.shellRim.scale.setScalar(graph.volume.W);
-    const surface = brainSurface();
+    const surface = brainSurface(this.shellResolution);
     const colors = surface.geometry.getAttribute("color") as BufferAttribute;
     const lit = Array.from({ length: REGION_COUNT }, (_, r) => {
       if (!graph.paraMode) return th.neutralShell.map((c) => c * th.usedRegion * 0.8);

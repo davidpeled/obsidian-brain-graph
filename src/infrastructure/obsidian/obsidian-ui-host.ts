@@ -1,4 +1,4 @@
-import { App, setIcon } from "obsidian";
+import { App, Platform, setIcon } from "obsidian";
 import { themeColorsOf } from "../dom/css-color";
 import type { ThemeColors, UiHost } from "../dom/ui-host";
 
@@ -7,6 +7,10 @@ export class ObsidianUiHost implements UiHost {
 
   isDark(): boolean {
     return activeDocument.body.hasClass("theme-dark");
+  }
+
+  isMobile(): boolean {
+    return Platform.isMobile;
   }
 
   /** Community themes and snippets set these variables, so the 3D labels follow them. */

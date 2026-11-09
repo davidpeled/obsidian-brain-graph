@@ -1,0 +1,71 @@
+name: Release
+
+# On every push to main: lint, test and build, then tag the commit with the manifest
+# version and publish a GitHub release with the plugin files.
+# A push that doesn't bump the version is a no-op: the tag already exists, so nothing is released.
+# To ship: bump `version` in manifest.json and package.json (and add it to versions.json), merge to main.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the tag and the release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Obsidian's review rules and the layering, with no warnings allowed.
+      - run: npm run lint
+      # Type-check, unit + architecture tests, production bundle within its size budget.
+      - run: npm run build
+
+      - name: Read the version
+        id: version
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          pkg=$(node -p "require('./package.json').version")
+          # Obsidian tags are the bare version: no "v" prefix.
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::manifest.json version '$version' must be x.y.z"
+            exit 1
+          fi
+          if [ "$version" != "$pkg" ]; then
+            echo "::error::manifest.json ($version) and package.json ($pkg) versions differ"
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether it is already released
+        id: exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$VERSION is already released; bump the version in manifest.json to publish a new one."
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tag and publish
+        if: steps.exists.outputs.found == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.value }}
+        # The tag must equal the manifest version exactly, and main.js, manifest.json and
+        # styles.css must be separate release assets: that is what Obsidian downloads.
+        # `gh release create` makes the tag on this commit and the release in one step.
+        run: |
+          gh release create "$VERSION" main.js manifest.json styles.css \
+            --target "$GITHUB_SHA" --title "$VERSION" --generate-notes
