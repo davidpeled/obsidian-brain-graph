@@ -1,9 +1,15 @@
 name: Release
 
-# On every push to main: lint, test and build, then tag the commit with the manifest
-# version and publish a GitHub release with the plugin files.
-# A push that doesn't bump the version is a no-op: the tag already exists, so nothing is released.
-# To ship: bump `version` in manifest.json and package.json (and add it to versions.json), merge to main.
+# On every push to main: lint, test and build, then publish a release with the next patch version.
+#
+# The version comes from the existing tags (highest tag, patch + 1), not from a file you must edit.
+# To ship a new minor or major version, set it in manifest.json and package.json (above the latest
+# tag); the workflow releases that version as written, and patch numbering continues from it.
+#
+# main is protected (pull request + review required), so the workflow never pushes to it. It puts the
+# version into manifest.json, package.json, package-lock.json and versions.json in a release commit
+# that is not on main, tags that commit, and publishes the release from it. The tag is the version
+# source of truth; the version files on main can lag behind it.
 on:
   push:
     branches: [main]
@@ -16,9 +22,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # create the tag and the release
+      contents: write # push the tag and create the release
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # all tags, to find the latest version
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -29,43 +37,33 @@ jobs:
       # Type-check, unit + architecture tests, production bundle within its size budget.
       - run: npm run build
 
-      - name: Read the version
+      - name: Choose the version and stamp it into the version files
         id: version
         run: |
-          version=$(node -p "require('./manifest.json').version")
-          pkg=$(node -p "require('./package.json').version")
-          # Obsidian tags are the bare version: no "v" prefix.
-          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::manifest.json version '$version' must be x.y.z"
-            exit 1
-          fi
-          if [ "$version" != "$pkg" ]; then
-            echo "::error::manifest.json ($version) and package.json ($pkg) versions differ"
-            exit 1
-          fi
+          # shellcheck disable=SC2046
+          version=$(node scripts/bump-version.mjs $(git tag --list))
           echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version"
 
-      - name: Check whether it is already released
-        id: exists
+      - name: Commit the stamped files and tag them
         env:
-          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.value }}
         run: |
-          if gh release view "$VERSION" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::$VERSION is already released; bump the version in manifest.json to publish a new one."
-          else
-            echo "found=false" >> "$GITHUB_OUTPUT"
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json package.json package-lock.json versions.json
+          # Nothing to commit when the manifest already carried this exact version.
+          git diff --cached --quiet || git commit -m "Release $VERSION"
+          # The tag must equal the manifest version exactly (no "v"). Only the tag is pushed.
+          git tag "$VERSION"
+          git push origin "refs/tags/$VERSION"
 
-      - name: Tag and publish
-        if: steps.exists.outputs.found == 'false'
+      - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.value }}
-        # The tag must equal the manifest version exactly, and main.js, manifest.json and
-        # styles.css must be separate release assets: that is what Obsidian downloads.
-        # `gh release create` makes the tag on this commit and the release in one step.
+        # main.js, manifest.json and styles.css must be separate release assets: that is what Obsidian
+        # downloads. manifest.json here is the stamped one, so it matches the tag.
         run: |
           gh release create "$VERSION" main.js manifest.json styles.css \
-            --target "$GITHUB_SHA" --title "$VERSION" --generate-notes
+            --verify-tag --title "$VERSION" --generate-notes
