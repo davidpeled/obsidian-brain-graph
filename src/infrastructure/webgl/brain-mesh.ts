@@ -20,20 +20,24 @@ const BLEND_RADIUS = 0.045;
 const LOBES = R_OCCIPITAL + 1;
 const isCerebral = (r: number) => r >= 0 && r < LOBES;
 
-const RESOLUTION = 128;
+/** Shell grid size (voxels per side) per platform. */
+export const SHELL_RESOLUTION = { desktop: 128, mobile: 96 } as const;
+// Marching-cubes cost grows with the cube of the resolution: 96³ is 42% of the work of 128³
+// (about 58% less). The shell is a translucent backdrop, so phones don't need the detail.
 /** The marching-cubes cube [-1, 1]³ maps onto this normalised box. */
 const CENTER = { x: 0.5, y: ASPECT / 2, z: 0 };
 const HALF = 0.56;
 
 /**
- * Per-process singleton: the shell mesh, built on first use and shared by every
- * renderer (every open view) until the plugin's code is unloaded. Renderers
+ * Per-process cache: the shell mesh for each resolution, built on first use and shared by every
+ * renderer (every open view) until the plugin's code is unloaded. An app uses one platform's
+ * resolution, so in practice there is one entry. Renderers
  * must not dispose its geometry. Each renderer rewrites its colour attribute on
  * setup; that is safe only because every view shows the same vault with the same
  * settings and theme, so they all write the same colours. Per-view shell colours
  * would need a per-renderer colour buffer.
  */
-let sharedSurface: BrainSurface | null = null;
+const sharedSurfaces = new Map<number, BrainSurface>();
 
 /** In-place separable box blur of a GW × GH grid. */
 function boxBlur(src: Float32Array, radius: number): void {
@@ -120,12 +124,13 @@ function indexSoup(local: Float32Array, normals: Float32Array, count: number): B
  * Polygonises the domain's brain field (zero level set) once and caches the
  * result: the shape is scale-independent, only the mesh transform changes.
  */
-export function brainSurface(): BrainSurface {
-  if (sharedSurface) return sharedSurface;
+export function brainSurface(resolution: number = SHELL_RESOLUTION.desktop): BrainSurface {
+  const cached = sharedSurfaces.get(resolution);
+  if (cached) return cached;
   const field = brainField();
-  const mc = new MarchingCubes(RESOLUTION, new MeshBasicMaterial(), false, false, 300_000);
+  const mc = new MarchingCubes(resolution, new MeshBasicMaterial(), false, false, 300_000);
   mc.isolation = 0;
-  const n = RESOLUTION;
+  const n = resolution;
   const half = n / 2;
   // Voxels beyond the brain's depth or height only need to be "outside":
   // a cheap negative value instead of a full field lookup (~40% of the box).
@@ -175,6 +180,7 @@ export function brainSurface(): BrainSurface {
   }
   geometry.setAttribute("color", new BufferAttribute(new Float32Array(count * 3), 3));
   geometry.computeBoundingSphere();
-  sharedSurface = { geometry, vertexRegion, vertexWeights };
-  return sharedSurface;
+  const surface = { geometry, vertexRegion, vertexWeights };
+  sharedSurfaces.set(resolution, surface);
+  return surface;
 }

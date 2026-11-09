@@ -14,6 +14,8 @@ export interface ThemeColors {
 
 export interface UiHost {
   isDark(): boolean;
+  /** A phone or tablet: the panel uses a lighter 3D shell and a finger-friendly layout. */
+  isMobile(): boolean;
   /** The theme's colours as seen from `el` (so popouts and per-pane overrides count), or null if unknown. */
   themeColors(el: HTMLElement): ThemeColors | null;
   fontFamily(): string;

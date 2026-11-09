@@ -247,6 +247,76 @@ describe("BrainController", () => {
   });
 });
 
+describe("BrainController touch", () => {
+  const at = { clientX: 0, clientY: 0 };
+
+  it("uses a finger-sized hit area for touch, wider than the mouse's", async () => {
+    const ctx = await setup();
+    const { x, y } = screenOf(ctx, "Plan");
+    const i = ctx.controller.hitTest(x, y);
+    expect(i).toBeGreaterThanOrEqual(0);
+    const offsets = Array.from({ length: 30 }, (_, k) => k + 4);
+    const widerForTouch = offsets.find((d) => ctx.controller.hitTest(x + d, y, false) < 0 && ctx.controller.hitTest(x + d, y, true) === i);
+    expect(widerForTouch).toBeDefined();
+  });
+
+  it("selects on the first tap and opens on the second", async () => {
+    const ctx = await setup();
+    const { x, y, n } = screenOf(ctx, "Plan");
+    const tap = () => {
+      ctx.controller.pointerDown(x, y, 0, false, true);
+      ctx.controller.pointerUp(false);
+    };
+    tap();
+    expect(ctx.workspace.opened).toEqual([]);
+    expect(ctx.controller.tooltip()?.title).toBe("Plan");
+    expect(ctx.graph.state!.firing.pulses.length).toBeGreaterThan(0);
+    tap();
+    expect(ctx.workspace.opened).toEqual([{ path: n.path, mode: "current" }]);
+  });
+
+  it("deselect clears the selection, so the next tap selects instead of opening", async () => {
+    const ctx = await setup();
+    const { x, y } = screenOf(ctx, "Plan");
+    const tap = () => {
+      ctx.controller.pointerDown(x, y, 0, false, true);
+      ctx.controller.pointerUp(false);
+    };
+    tap();
+    ctx.controller.deselect();
+    expect(ctx.controller.hovering).toBe(false);
+    tap();
+    expect(ctx.workspace.opened).toEqual([]);
+    expect(ctx.controller.hovering).toBe(true);
+  });
+
+  it("long-press shows the menu on a neuron without a tap afterwards, and does nothing on empty space", async () => {
+    const ctx = await setup();
+    expect(ctx.controller.longPress(1, 1, at)).toBe(false);
+    expect(ctx.menu.last).toBeNull();
+    const { x, y } = screenOf(ctx, "Copy");
+    ctx.controller.pointerDown(x, y, 0, false, true);
+    expect(ctx.controller.longPress(x, y, at)).toBe(true);
+    expect(ctx.menu.last).not.toBeNull();
+    ctx.controller.pointerUp(false);
+    expect(ctx.workspace.opened).toEqual([]);
+    expect(ctx.controller.hovering).toBe(false);
+  });
+
+  it("a two-finger gesture pans with the midpoint and zooms with the finger distance", async () => {
+    const ctx = await setup();
+    const cam = ctx.controller.camera;
+    const before = { d: cam.distance, tx: cam.target.x, ty: cam.target.y, tz: cam.target.z };
+    ctx.controller.gesture({ cx: 500, cy: 380, dx: 0, dy: 0, scale: 2 });
+    expect(cam.distance).toBeLessThan(before.d);
+    const mid = { d: cam.distance, tx: cam.target.x, ty: cam.target.y, tz: cam.target.z };
+    ctx.controller.gesture({ cx: 500, cy: 380, dx: 40, dy: 0, scale: 1 });
+    expect(cam.distance).toBeCloseTo(mid.d);
+    expect(Math.hypot(cam.target.x - mid.tx, cam.target.y - mid.ty, cam.target.z - mid.tz)).toBeGreaterThan(0);
+    expect(cam.userMoved).toBe(true);
+  });
+});
+
 describe("BrainGraphService watchers", () => {
   it("rebuilds once per change however many watchers there are, and unsubscribes with the last", async () => {
     vi.useFakeTimers();

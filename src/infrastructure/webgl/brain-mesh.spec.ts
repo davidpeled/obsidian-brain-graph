@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { REGION_COUNT } from "../../domain/contracts/anatomy";
 import { brainField } from "../../domain/model/anatomy/brain-volume";
-import { brainSurface } from "./brain-mesh";
+import { SHELL_RESOLUTION, brainSurface } from "./brain-mesh";
 
 describe("brainSurface", () => {
   const s = brainSurface();
@@ -48,5 +48,19 @@ describe("brainSurface", () => {
       seen.add(s.vertexRegion[i]);
     }
     expect(seen.size).toBe(REGION_COUNT);
+  });
+});
+
+describe("brainSurface on mobile", () => {
+  it("is a coarser but still closed, fully coloured shell, cached per resolution", () => {
+    const desktop = brainSurface();
+    const mobile = brainSurface(SHELL_RESOLUTION.mobile);
+    expect(brainSurface(SHELL_RESOLUTION.mobile)).toBe(mobile);
+    expect(mobile).not.toBe(desktop);
+    const verts = (s: typeof mobile) => s.geometry.getAttribute("position").count;
+    expect(verts(mobile)).toBeLessThan(verts(desktop) * 0.7);
+    const seen = new Set<number>(mobile.vertexRegion);
+    expect(seen.size).toBe(REGION_COUNT);
+    expect(mobile.geometry.getIndex()!.count % 3).toBe(0);
   });
 });

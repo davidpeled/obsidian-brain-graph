@@ -12,6 +12,7 @@ import { StatsView, TooltipView, toStats, toTooltip } from "../mappers/neuron.ma
 import { Palette, paletteKey, toPalette } from "../mappers/palette.mapper";
 import { Highlight } from "./highlight";
 import { OrbitCamera } from "./orbit-camera";
+import type { PinchDelta } from "./pinch-gesture";
 import { PointerInteraction } from "./pointer-interaction";
 
 export interface BrainControllerDeps {
@@ -28,6 +29,9 @@ const AUTO_ROTATE_IDLE = 2.5;
 const KEY_ORBIT = 30;
 const KEY_PAN = 40;
 const KEY_ZOOM = 1.25;
+/** Touch hit area: a finger is about 40 px wide, so neurons get at least this radius plus slop. */
+const TOUCH_MIN_RADIUS = 14;
+const TOUCH_SLOP = 6;
 
 /** Keyboard shortcuts while the brain has focus, for hosts to show in tooltips and help. */
 export const KEY_SHORTCUTS = {
@@ -50,7 +54,12 @@ export class BrainController {
   readonly camera = new OrbitCamera();
   private readonly highlight = new Highlight();
   private readonly pointer = new PointerInteraction({
-    hitTest: (sx, sy) => this.hitTest(sx, sy),
+    hitTest: (sx, sy, touch) => this.hitTest(sx, sy, touch),
+    hovered: () => this.highlight.hover,
+    select: (i) => {
+      this.setHover(i);
+      if (i >= 0) this.state?.firing.fire(i, 2, true);
+    },
     positionOf: (i) => this.neuron(i),
     orbit: (dx, dy) => this.camera.orbit(dx, dy),
     pan: (dx, dy) => this.camera.pan(dx, dy),
@@ -287,8 +296,8 @@ export class BrainController {
 
   // --- Input (screen coordinates relative to the canvas) ----------------------------
 
-  /** Front-most neuron under the screen point, or -1. */
-  hitTest(sx: number, sy: number): number {
+  /** Front-most neuron under the screen point, or -1. `touch` uses a finger-sized hit area. */
+  hitTest(sx: number, sy: number, touch = false): number {
     const s = this.state;
     if (!s) return -1;
     let best = -1;
@@ -296,7 +305,7 @@ export class BrainController {
     const p = { x: 0, y: 0, depth: 0, scale: 0 };
     s.connectome.neurons.forEach((n, i) => {
       if (!this.camera.projectTo(n, p)) return;
-      const radius = Math.max(4, n.r * p.scale) + 3;
+      const radius = touch ? Math.max(TOUCH_MIN_RADIUS, n.r * p.scale) + TOUCH_SLOP : Math.max(4, n.r * p.scale) + 3;
       if (Math.hypot(p.x - sx, p.y - sy) <= radius && p.depth < bestDepth) {
         best = i;
         bestDepth = p.depth;
@@ -306,9 +315,9 @@ export class BrainController {
   }
 
   /** `pan`: the host's pan modifier (e.g. Shift) is held. Middle/right buttons also pan. */
-  pointerDown(sx: number, sy: number, button: number, pan = false): void {
+  pointerDown(sx: number, sy: number, button: number, pan = false, touch = false): void {
     this.touch();
-    this.pointer.down(sx, sy, button, pan);
+    this.pointer.down(sx, sy, button, pan, touch);
   }
 
   pointerMove(sx: number, sy: number): void {
@@ -325,6 +334,28 @@ export class BrainController {
   /** The press was interrupted (e.g. a touch was cancelled): release without clicking. */
   pointerCancel(): void {
     this.pointer.cancel();
+  }
+
+  /** Two-finger pan and pinch-zoom, as deltas since the last reading. */
+  gesture(g: PinchDelta): void {
+    this.touch();
+    this.camera.pan(g.dx, g.dy);
+    this.camera.zoomAt(g.cx, g.cy, g.scale);
+  }
+
+  /**
+   * A finger held in place on a neuron: open its context menu and drop the press
+   * so lifting the finger does not also tap. Returns true when a menu was shown.
+   */
+  longPress(sx: number, sy: number, at: { clientX: number; clientY: number }): boolean {
+    if (!this.contextMenu(sx, sy, at, true)) return false;
+    this.pointer.cancel();
+    return true;
+  }
+
+  /** Drop a touch selection (e.g. a tap outside the canvas). */
+  deselect(): void {
+    if (this.pointer.clearSelection()) this.setHover(-1);
   }
 
   pointerLeave(): void {
@@ -379,8 +410,8 @@ export class BrainController {
   }
 
   /** Returns true when a menu was shown (the host should suppress its own). */
-  contextMenu(sx: number, sy: number, at: { clientX: number; clientY: number }): boolean {
-    const i = this.hitTest(sx, sy);
+  contextMenu(sx: number, sy: number, at: { clientX: number; clientY: number }, touch = false): boolean {
+    const i = this.hitTest(sx, sy, touch);
     const n = this.neuron(i);
     if (!n || !this.state) return false;
     const { workspace } = this.deps;
