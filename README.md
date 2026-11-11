@@ -9,7 +9,13 @@ See your vault as a living brain. Every note is a **neuron** and every link is a
 | [![The same vault in the light theme](docs/images/brain-light.png)](docs/images/brain-light.png) | [![A close-up after picking a lobe in the legend](docs/images/brain-focus.png)](docs/images/brain-focus.png) | [![A vault of 1,816 notes without PARA folders, clustered by folder](docs/images/brain-free.png)](docs/images/brain-free.png) |
 | The same 2,569 notes; the scene follows your Obsidian theme. | Click a legend row to fly to that lobe. | 1,816 notes and 2,681 links, clustered by folder across the whole brain. |
 
-<sub>Screenshots from the browser demo (`npm start`) with a generated test vault.</sub>
+### Watch your brain grow
+
+![The brain filling up as notes were created: neurons appear in each lobe, oldest first, while the timeline bar moves from the first note to today](docs/images/brain-timeline.gif)
+
+The ◷ button opens a timeline bar. Press play, or drag the scrubber, to replay your vault from its first note to today.
+
+<sub>Screenshots and the recording are from the browser demo (`npm start`) with a generated test vault.</sub>
 
 ## PARA → cortex mapping
 
