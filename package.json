@@ -1,6 +1,6 @@
 {
   "name": "obsidian-para-brain",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "description": "Obsidian plugin: your vault's graph as a living brain of neurons, with PARA folders mapped to cortical lobes.",
   "main": "main.js",
   "scripts": {
