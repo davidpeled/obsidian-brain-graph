@@ -360,3 +360,47 @@
 .brain-graph-wrap.is-compact .brain-graph-legend-title {
   max-width: none;
 }
+
+/* Timeline: a bar along the bottom that replays the brain growing by note creation date. */
+.brain-graph-btn.is-hidden {
+  display: none;
+}
+
+.brain-graph-timeline {
+  position: absolute;
+  right: var(--size-4-3);
+  bottom: var(--size-4-3);
+  display: none;
+  align-items: center;
+  gap: var(--size-4-2);
+  width: min(420px, calc(100% - 280px));
+  padding: var(--size-4-1) var(--size-4-3);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: var(--shadow-s);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.brain-graph-timeline.is-visible {
+  display: flex;
+}
+
+.brain-graph-timeline-scrub {
+  flex: 1;
+  min-width: 0;
+}
+
+.brain-graph-timeline-when {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.brain-graph-wrap.is-compact .brain-graph-timeline {
+  left: var(--size-4-2);
+  right: var(--size-4-2);
+  bottom: var(--size-4-2);
+  width: auto;
+  flex-wrap: wrap;
+}

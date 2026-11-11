@@ -69,7 +69,7 @@ export class LabelOverlay {
         pscale[i] = 0; // behind the camera
       }
     }
-    const onScreen = (i: number) => pscale[i] > 0 && px[i] > -50 && py[i] > -50 && px[i] < this.w + 50 && py[i] < this.h + 50;
+    const onScreen = (i: number) => frame.presence[i] > 0.3 && pscale[i] > 0 && px[i] > -50 && py[i] > -50 && px[i] < this.w + 50 && py[i] < this.h + 50;
     let picks: number[];
     if (focus) {
       picks = [...focus].filter(onScreen).sort((a, b) => graph.degree[b] - graph.degree[a]).slice(0, 150);

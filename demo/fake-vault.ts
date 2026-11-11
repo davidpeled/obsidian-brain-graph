@@ -59,7 +59,7 @@ export function makeVault(kind: VaultKind, size: number, seed: number): VaultSna
       let name = `${pick(WORDS)} ${pick(WORDS)}`;
       while (used.has(dir + name)) name += ` ${Math.floor(rnd() * 99)}`;
       used.add(dir + name);
-      group.push({ basename: name, path: `${dir ? dir + "/" : ""}${name}.md` });
+      group.push({ basename: name, path: `${dir ? dir + "/" : ""}${name}.md`, created: Date.now() - Math.floor(rnd() * rnd() * 3 * 365 * 864e5) });
     }
     groups.push(group);
   }
@@ -86,5 +86,5 @@ export function withNewNote(v: VaultSnapshot): { vault: VaultSnapshot; path: str
   const dir = anchor.path.includes("/") ? anchor.path.slice(0, anchor.path.lastIndexOf("/") + 1) : "";
   const basename = `New note ${Date.now() % 10000}`;
   const path = `${dir}${basename}.md`;
-  return { path, vault: { ...v, notes: [...v.notes, { path, basename }], links: [...v.links, [path, anchor.path]] } };
+  return { path, vault: { ...v, notes: [...v.notes, { path, basename, created: Date.now() }], links: [...v.links, [path, anchor.path]] } };
 }

@@ -48,6 +48,7 @@ The brain is fully 3D: a translucent shell tinted by lobe, with neurons, synapse
 - **Right-click** for Open / Open in new tab / Fire / Fly to neuron.
 - **Search** box: matching neurons are highlighted; Enter flies to the best match.
 - **Legend**: click a lobe to fly to it.
+- **History**: the ◷ toolbar button opens a timeline bar. Press play to watch the brain fill up as notes were created (oldest first), or drag the scrubber. It uses each file's creation time, so it only appears when your notes have at least two different dates.
 - The note you have open glows and fires when you switch to it.
 - **Keyboard**: click the brain (or Tab to it), then use the arrow keys to rotate, Shift + arrows to pan, + / − to zoom, F to fit and R to toggle auto-rotate. `/` jumps to the search box. The toolbar buttons and legend rows are regular buttons, so Tab, Enter and Space work on them too.
 - The scene's background and label colors follow your Obsidian theme, including community themes.

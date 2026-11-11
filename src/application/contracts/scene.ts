@@ -48,12 +48,22 @@ export interface PulseView {
   readonly source: number;
 }
 
+/** How far each neuron has grown in on the timeline; the frame builder depends on this, not on playback logic. */
+export interface Presence {
+  /** 0 = not born yet, 1 = fully grown. */
+  presence(i: number): number;
+  /** Changes whenever the set of born neurons changes. */
+  readonly signature: number;
+}
+
 /** Everything that changes every frame. */
 export interface FrameView {
   /** x,y,z per neuron. */
   readonly positions: Float32Array;
   /** 0..1 per neuron. */
   readonly activation: Float32Array;
+  /** 0..1 per neuron: how far it has grown in on the timeline (0 = not born yet, hide it). All 1 when the timeline is off. */
+  readonly presence: Float32Array;
   /** Changes whenever any position changed since the previous frame. */
   readonly layoutVersion: number;
   readonly pulses: readonly PulseView[];

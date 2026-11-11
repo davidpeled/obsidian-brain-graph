@@ -84,6 +84,14 @@ describe("architecture", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("keeps read-model mappers independent of controllers", () => {
+    // Controllers build on mappers, not the other way round; shared shapes live in application/contracts.
+    const offenders = sources
+      .filter((s) => s.rel.startsWith(path.join("application", "mappers")))
+      .flatMap((s) => s.imports.filter((i) => i.includes("/controllers/")).map((i) => `${s.rel} -> ${i}`));
+    expect(offenders).toEqual([]);
+  });
+
   it("keeps domain and application free of the DOM", () => {
     const offenders = sources
       .filter((s) => s.layer === "domain" || s.layer === "application")

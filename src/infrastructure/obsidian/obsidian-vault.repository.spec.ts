@@ -32,7 +32,7 @@ class Events {
 function stubApp(vault: VaultSnapshot) {
   const vaultEvents = new Events();
   const cacheEvents = new Events();
-  const files = vault.notes.map((n) => ({ path: n.path, basename: n.basename, extension: "md" }));
+  const files = vault.notes.map((n) => ({ path: n.path, basename: n.basename, extension: "md", stat: { ctime: n.created } }));
   // Obsidian counts links per target: { from: { to: count } }, unresolved links excluded.
   const resolvedLinks: Record<string, Record<string, number>> = {};
   for (const [from, to] of vault.links) (resolvedLinks[from] ??= {})[to] = 2;

@@ -2,6 +2,8 @@
 export interface NoteRef {
   path: string;
   basename: string;
+  /** When the note was created (ms since epoch). Unknown or missing counts as the beginning of time. */
+  created?: number;
 }
 
 /** Immutable picture of the vault at one moment, produced by a VaultRepository. */

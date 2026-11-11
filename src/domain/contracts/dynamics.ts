@@ -28,7 +28,8 @@ export interface BrainFiring {
   readonly pulses: readonly Pulse[];
   /** Activate a neuron and emit pulses that may cascade `depth` hops. */
   fire(neuron: number, depth: number, strong?: boolean): void;
-  fireRandom(): void;
+  /** Fire a random (preferably connected) neuron; `eligible` can exclude some (e.g. notes not born yet). */
+  fireRandom(eligible?: (neuron: number) => boolean): void;
   step(dt: number, cond: FiringConditions): void;
 }
 

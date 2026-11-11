@@ -36,7 +36,7 @@ Imports only point inwards: `infrastructure` → `application` → `domain`. Onl
 ## 4. Per-module design
 
 ### Domain (`src/domain`)
-- `contracts/`: entities and value types (`Neuron`, `Synapse`, `Connectome`, `VaultSnapshot`, `StructureSettings`, region constants, `Pulse`) and the inbound contract `BrainGraphService`. Its `BrainState` exposes the running brain through the interfaces `BrainVolume`, `BrainLayout` and `BrainFiring`, which the model classes (`RegionVolume`, `LayoutSimulation`, `ActionPotentials`) implement, so contracts never import the model.
+- `contracts/`: entities and value types (`Neuron`, `Synapse`, `Connectome`, `VaultSnapshot` (notes carry an optional `created` time, `Neuron.created` is 0 when unknown), `StructureSettings`, region constants, `Pulse`) and the inbound contract `BrainGraphService`. Its `BrainState` exposes the running brain through the interfaces `BrainVolume`, `BrainLayout` and `BrainFiring`, which the model classes (`RegionVolume`, `LayoutSimulation`, `ActionPotentials`) implement, so contracts never import the model.
 - `interfaces/` (outbound ports):
 
   | Port | Purpose |
@@ -64,6 +64,7 @@ Imports only point inwards: `infrastructure` → `application` → `domain`. Onl
   - It applies scale hysteresis and caches region volumes per scale (a per-process cache shared by every view, at most 5 sizes).
 - `services/settings.service.ts`: sanitizes stored settings over the defaults (unknown keys, wrong types and non-finite numbers fall back), persists every update, and tells listeners whether a change was structural.
 - `controllers/orbit-camera.ts`: a perspective orbit camera as pure math (project, unproject, orbit, pan, dolly, fit). Picking, neuron dragging and labels all use it, so they are unit-tested; the WebGL renderer copies its pose into three.js.
+- `controllers/timeline.ts`: the brain's history. A playhead over the notes' creation times (the sorted times give the count of born notes in O(log n)); neurons grow in as it passes their date. It implements the `Presence` contract, so `FrameBuffer` depends on that and not on playback. Commands (toggle, play/pause, seek) live on `BrainController`, which also keeps unborn neurons out of picking, random firing, search fly-to and legend focus.
 - `controllers/highlight.ts`: hover, search and focus. It tracks the hovered note by path across rebuilds and keeps a `version` that bumps when the focus changes.
 - `controllers/pointer-interaction.ts`: the pointer state machine (neuron drag, orbit, pan, click, hover, cancel) behind a narrow `PointerHost` interface.
 - `controllers/brain.controller.ts`: composes the camera, `Highlight` and `PointerInteraction`, and owns the graph lifecycle, palette, auto-rotate and commands. It takes screen-space input without knowing about any transport, runs the frame clock, and exposes `scene()`.
@@ -74,7 +75,7 @@ Imports only point inwards: `infrastructure` → `application` → `domain`. Onl
 ### Renderer read model (`application/contracts/scene.ts`)
 Renderers receive a `SceneView` of plain data and never touch domain objects:
 - **`GraphView`**, built once per rebuild: names, degree, radius, region, dendrites and their planes, synapse endpoints / cross flags / curvature as typed arrays, the volume dimensions, used regions and lobe captions.
-- **`FrameView`**, refreshed each frame into reused typed arrays: positions, activation, pulses, and a `layoutVersion` that changes only when neurons moved.
+- **`FrameView`**, refreshed each frame into reused typed arrays: positions, activation, `presence` (0 = not born yet on the timeline, hidden by the renderer; 1 otherwise), pulses, and a `layoutVersion` that changes only when neurons moved or the set of born neurons changed (so wires rewrite).
 - **`focusVersion`**, from `Highlight`.
 
 The renderer rewrites its line buffers from these two version counters, and `WireSync` remembers changes made while a layer is hidden.

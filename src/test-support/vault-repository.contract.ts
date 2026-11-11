@@ -12,9 +12,9 @@ export interface VaultHarness {
 const VAULT: VaultSnapshot = {
   name: "Second Brain",
   notes: [
-    { path: "1. Projects/Plan.md", basename: "Plan" },
-    { path: "1. Projects/Website/Copy.md", basename: "Copy" },
-    { path: "Root note.md", basename: "Root note" },
+    { path: "1. Projects/Plan.md", basename: "Plan", created: 1_600_000_000_000 },
+    { path: "1. Projects/Website/Copy.md", basename: "Copy", created: 1_650_000_000_000 },
+    { path: "Root note.md", basename: "Root note", created: 1_700_000_000_000 },
   ],
   folders: ["1. Projects", "1. Projects/Website", "Empty"],
   links: [
