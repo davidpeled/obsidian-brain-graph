@@ -29,6 +29,8 @@ export const CATEGORY_LABEL: Readonly<Record<ParaCategory, string>> = {
 export interface Neuron {
   readonly path: string;
   readonly name: string;
+  /** Creation time (ms since epoch); 0 when unknown. */
+  readonly created: number;
   /** null when the brain is not PARA-structured. */
   readonly category: ParaCategory | null;
   readonly clusterKey: string;

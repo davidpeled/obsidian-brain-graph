@@ -327,9 +327,10 @@ export class WebGLBrainRenderer {
       const x = pos[i * 3];
       const y = pos[i * 3 + 1];
       const z = pos[i * 3 + 2];
+      const born = frame.presence[i];
       const radius = graph.radius[i];
       const a = act[i];
-      const s = radius * (1 + a * 0.35) * (i === hover ? 1.4 : 1);
+      const s = radius * born * (1 + a * 0.35) * (i === hover ? 1.4 : 1);
       this.m.makeScale(s, s, s).setPosition(x, y, z);
       this.somas.setMatrixAt(i, this.m);
       const ci = colorOf[i] * 3;
@@ -350,8 +351,8 @@ export class WebGLBrainRenderer {
       ht[i * 3] = r;
       ht[i * 3 + 1] = g;
       ht[i * 3 + 2] = b;
-      this.halos.size[i] = radius * (5 + a * 6) * (i === hover ? 1.6 : 1);
-      this.halos.alpha[i] = (th.glowBase + a * 0.9 + (i === scene.active ? 0.5 : 0)) * (dim(i) ? 0.12 : 1);
+      this.halos.size[i] = radius * (5 + a * 6) * (i === hover ? 1.6 : 1) * born;
+      this.halos.alpha[i] = (th.glowBase + a * 0.9 + (i === scene.active ? 0.5 : 0)) * (dim(i) ? 0.12 : 1) * born;
     }
     this.somas.count = graph.count;
     this.somas.instanceMatrix.needsUpdate = true;
@@ -373,6 +374,7 @@ export class WebGLBrainRenderer {
       const e = p.synapse;
       const a = graph.synapseA[e];
       const b = graph.synapseB[e];
+      if (frame.presence[a] === 0 || frame.presence[b] === 0) continue;
       const ci = colorOf[p.source] * 3;
       const fade = focus && !(focus.has(a) || focus.has(b)) ? 0.2 : 1;
       controlPoint(graph, pos, e, ctl);
@@ -404,6 +406,8 @@ export class WebGLBrainRenderer {
     for (let e = 0; e < graph.synapseA.length; e++) {
       const a = graph.synapseA[e];
       const b = graph.synapseB[e];
+      // A link shows in full as soon as both ends exist; only neurons grow in gradually.
+      const unborn = frame.presence[a] === 0 || frame.presence[b] === 0;
       let rgb: readonly number[] = graph.synapseCross[e] ? th.crossSynapse : th.synapse;
       let k = 1;
       if (hover >= 0 && (a === hover || b === hover)) {
@@ -413,7 +417,14 @@ export class WebGLBrainRenderer {
       } else if (focus) {
         k = focus.has(a) && focus.has(b) ? 1.2 : 0.15;
       }
-      if (positions) {
+      if (positions && unborn) {
+        // A link to a note that does not exist yet collapses to a point.
+        for (let o = v * 3, end = (v + 2 * CURVE_SEGMENTS) * 3; o < end; o += 3) {
+          out[o] = frame.positions[a * 3];
+          out[o + 1] = frame.positions[a * 3 + 1];
+          out[o + 2] = frame.positions[a * 3 + 2];
+        }
+      } else if (positions) {
         // Segment s runs from curve point s to s + 1; each point is written straight into both ends.
         controlPoint(graph, frame.positions, e, this.ctl);
         for (let s = 0; s <= CURVE_SEGMENTS; s++) {
@@ -448,7 +459,7 @@ export class WebGLBrainRenderer {
     for (let i = 0; i < graph.count; i++) {
       const d = graph.dendrites[i];
       const o = i * 6;
-      const radius = graph.radius[i];
+      const radius = graph.radius[i] * (frame.presence[i] === 0 ? 0 : 1);
       const x = frame.positions[i * 3];
       const y = frame.positions[i * 3 + 1];
       const z = frame.positions[i * 3 + 2];

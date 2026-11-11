@@ -9,7 +9,13 @@ See your vault as a living brain. Every note is a **neuron** and every link is a
 | [![The same vault in the light theme](docs/images/brain-light.png)](docs/images/brain-light.png) | [![A close-up after picking a lobe in the legend](docs/images/brain-focus.png)](docs/images/brain-focus.png) | [![A vault of 1,816 notes without PARA folders, clustered by folder](docs/images/brain-free.png)](docs/images/brain-free.png) |
 | The same 2,569 notes; the scene follows your Obsidian theme. | Click a legend row to fly to that lobe. | 1,816 notes and 2,681 links, clustered by folder across the whole brain. |
 
-<sub>Screenshots from the browser demo (`npm start`) with a generated test vault.</sub>
+### Watch your brain grow
+
+![The brain filling up as notes were created: neurons appear in each lobe, oldest first, while the timeline bar moves from the first note to today](docs/images/brain-timeline.gif)
+
+The ◷ button opens a timeline bar. Press play, or drag the scrubber, to replay your vault from its first note to today.
+
+<sub>Screenshots and the recording are from the browser demo (`npm start`) with a generated test vault.</sub>
 
 ## PARA → cortex mapping
 
@@ -48,6 +54,7 @@ The brain is fully 3D: a translucent shell tinted by lobe, with neurons, synapse
 - **Right-click** for Open / Open in new tab / Fire / Fly to neuron.
 - **Search** box: matching neurons are highlighted; Enter flies to the best match.
 - **Legend**: click a lobe to fly to it.
+- **History**: the ◷ toolbar button opens a timeline bar. Press play to watch the brain fill up as notes were created (oldest first), or drag the scrubber. It uses each file's creation time, so it only appears when your notes have at least two different dates.
 - The note you have open glows and fires when you switch to it.
 - **Keyboard**: click the brain (or Tab to it), then use the arrow keys to rotate, Shift + arrows to pan, + / − to zoom, F to fit and R to toggle auto-rotate. `/` jumps to the search box. The toolbar buttons and legend rows are regular buttons, so Tab, Enter and Space work on them too.
 - The scene's background and label colors follow your Obsidian theme, including community themes.

@@ -12,7 +12,7 @@ export class ObsidianVaultRepository implements VaultRepository {
     for (const from in resolved) for (const to in resolved[from]) links.push([from, to]);
     return {
       name: vault.getName(),
-      notes: vault.getMarkdownFiles().map((f) => ({ path: f.path, basename: f.basename })),
+      notes: vault.getMarkdownFiles().map((f) => ({ path: f.path, basename: f.basename, created: f.stat.ctime })),
       folders: vault
         .getAllLoadedFiles()
         .filter((f): f is TFolder => f instanceof TFolder && !f.isRoot())

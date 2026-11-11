@@ -11,6 +11,9 @@ export const UNICODE_ICONS: Record<string, string> = {
   "file-plus": "＋",
   "zoom-in": "🔍",
   list: "☰",
+  history: "◷",
+  play: "▶",
+  pause: "⏸",
 };
 
 /** UiHost for a plain web page: theme from a body class, unicode icons. */

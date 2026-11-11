@@ -47,6 +47,7 @@ function makeNeuron(note: NoteRef, placement: Placement): Neuron {
   return {
     path: note.path,
     name: note.basename,
+    created: note.created ?? 0,
     ...placement,
     region,
     allowed: placement.category ? regionBit(region) : CEREBRUM_BITS,

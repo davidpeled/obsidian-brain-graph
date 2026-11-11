@@ -3,7 +3,7 @@ import type { BrainState } from "../../domain/contracts/brain-graph.contract";
 import { CATEGORY_LABEL, CATEGORY_REGION, ParaCategory } from "../../domain/contracts/connectome";
 import { MAX_PULSES } from "../../domain/model/dynamics/action-potentials";
 import { hashString, mulberry32 } from "../../domain/model/shared/random";
-import type { FrameView, GraphView } from "../contracts/scene";
+import type { FrameView, GraphView, Presence } from "../contracts/scene";
 
 /** Random but stable plane per neuron for its dendrite tree. */
 function dendritePlanes(paths: readonly string[]): Float32Array {
@@ -76,6 +76,8 @@ export function toGraphView(state: BrainState): GraphView {
 export class FrameBuffer {
   private positions = new Float32Array(0);
   private activation = new Float32Array(0);
+  private presence = new Float32Array(0);
+  private timelineSignature = -1;
   private layoutVersion = 0;
 
   /** Record that positions changed (layout ticked, a neuron was dragged, or the brain was rebuilt). */
@@ -83,12 +85,18 @@ export class FrameBuffer {
     this.layoutVersion++;
   }
 
-  write(state: BrainState): FrameView {
+  write(state: BrainState, timeline: Presence): FrameView {
     const neurons = state.connectome.neurons;
     const n = neurons.length;
     if (this.activation.length !== n) {
       this.positions = new Float32Array(n * 3);
       this.activation = new Float32Array(n);
+      this.presence = new Float32Array(n);
+      this.layoutVersion++;
+    }
+    // Wires depend on which neurons exist yet, so a change in who is born counts as movement.
+    if (timeline.signature !== this.timelineSignature) {
+      this.timelineSignature = timeline.signature;
       this.layoutVersion++;
     }
     for (let i = 0; i < n; i++) {
@@ -97,7 +105,8 @@ export class FrameBuffer {
       this.positions[i * 3 + 1] = p.y;
       this.positions[i * 3 + 2] = p.z;
       this.activation[i] = p.activation;
+      this.presence[i] = timeline.presence(i);
     }
-    return { positions: this.positions, activation: this.activation, layoutVersion: this.layoutVersion, pulses: state.firing.pulses };
+    return { positions: this.positions, activation: this.activation, presence: this.presence, layoutVersion: this.layoutVersion, pulses: state.firing.pulses };
   }
 }

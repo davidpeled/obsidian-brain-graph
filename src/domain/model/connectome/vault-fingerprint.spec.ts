@@ -17,6 +17,8 @@ describe("vaultFingerprint", () => {
 
   it("changes when a note, folder or link changes", () => {
     expect(vaultFingerprint({ ...PARA_VAULT, notes: [...PARA_VAULT.notes, { path: "x.md", basename: "x" }] })).not.toBe(base);
+    const [first, ...rest] = PARA_VAULT.notes;
+    expect(vaultFingerprint({ ...PARA_VAULT, notes: [{ ...first, created: 123 }, ...rest] })).not.toBe(base);
     expect(vaultFingerprint({ ...PARA_VAULT, folders: [...PARA_VAULT.folders, "New"] })).not.toBe(base);
     expect(vaultFingerprint({ ...PARA_VAULT, links: [...PARA_VAULT.links, ["Root note.md", "4. Archive/Old.md"]] })).not.toBe(base);
     expect(vaultFingerprint(vault(["a.md"], [], "other"))).not.toBe(vaultFingerprint(vault(["a.md"], [], "test")));

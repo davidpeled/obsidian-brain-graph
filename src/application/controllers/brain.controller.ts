@@ -14,6 +14,7 @@ import { Highlight } from "./highlight";
 import { OrbitCamera } from "./orbit-camera";
 import type { PinchDelta } from "./pinch-gesture";
 import { PointerInteraction } from "./pointer-interaction";
+import { Timeline, TimelineView } from "./timeline";
 
 export interface BrainControllerDeps {
   graph: BrainGraphService;
@@ -85,6 +86,7 @@ export class BrainController {
   private palette: Palette = { colors: [], colorOf: new Uint8Array(0) };
   private graphView: GraphView | null = null;
   private readonly frame = new FrameBuffer();
+  private readonly timeline = new Timeline();
   private paletteFor = "";
   private pathIndex = new Map<string, number>();
   private hoverFireAcc = 0;
@@ -129,6 +131,7 @@ export class BrainController {
 
   private adopt(state: BrainState): void {
     this.graphView = toGraphView(state);
+    this.timeline.rebase(state.connectome.neurons);
     this.frame.moved();
     this.palette = toPalette(state.connectome, this.deps.settings.get());
     this.paletteFor = paletteKey(this.deps.settings.get());
@@ -156,7 +159,7 @@ export class BrainController {
     if (!state || !this.graphView) return null;
     return {
       graph: this.graphView,
-      frame: this.frame.write(state),
+      frame: this.frame.write(state, this.timeline),
       palette: this.palette,
       camera: this.camera,
       display: this.deps.settings.get(),
@@ -165,6 +168,11 @@ export class BrainController {
       focusVersion: this.highlight.version,
       active: this.indexOf(this.activePath),
     };
+  }
+
+  /** The playhead over the notes' creation dates, for the host to draw. */
+  timelineView(): TimelineView {
+    return this.timeline.view();
   }
 
   legend(): LegendItem[] {
@@ -221,8 +229,10 @@ export class BrainController {
     const s = this.state;
     if (!s) return;
     this.camera.step(dt);
+    this.timeline.step(dt);
     this.idle += dt;
     const settings = this.deps.settings.get();
+    if (this.highlight.hover >= 0 && !this.timeline.born(this.highlight.hover)) this.setHover(-1);
     const hover = this.highlight.hover;
     if (settings.autoRotate && !this.pointer.active && hover < 0 && this.idle > AUTO_ROTATE_IDLE) this.camera.autoRotate(dt);
     if (s.simulation.running) {
@@ -251,12 +261,27 @@ export class BrainController {
     if (s) this.fitTo(s, true);
   }
 
+  /** Show or hide the history. Turning it on opens at the present; press play to watch the brain fill. */
+  toggleTimeline(): void {
+    this.timeline.setActive(!this.timeline.active);
+  }
+
+  toggleTimelinePlayback(): void {
+    if (this.timeline.playing) this.timeline.pause();
+    else this.timeline.play();
+  }
+
+  /** Scrub the history: `progress` is 0 (first note) .. 1 (latest). */
+  seekTimeline(progress: number): void {
+    this.timeline.seek(progress);
+  }
+
   regrow(): void {
     this.adopt(this.deps.graph.rebuild(true));
   }
 
   fireRandom(): void {
-    this.state?.firing.fireRandom();
+    this.state?.firing.fireRandom((i) => this.timeline.born(i));
   }
 
   async toggleAmbientFiring(): Promise<void> {
@@ -274,9 +299,9 @@ export class BrainController {
   /** Fly to and fire the best-connected search hit. */
   focusFirstMatch(): void {
     const s = this.state;
-    const hits = this.highlight.matches;
-    if (!s || !hits?.size) return;
-    const best = [...hits].sort((a, b) => s.connectome.neurons[b].degree - s.connectome.neurons[a].degree)[0];
+    const hits = this.highlight.matches && [...this.highlight.matches].filter((i) => this.timeline.born(i));
+    if (!s || !hits?.length) return;
+    const best = hits.sort((a, b) => s.connectome.neurons[b].degree - s.connectome.neurons[a].degree)[0];
     this.touch();
     this.camera.focusOn(s.connectome.neurons[best]);
     s.firing.fire(best, 3, true);
@@ -290,7 +315,7 @@ export class BrainController {
     const b =
       target.kind === "region"
         ? s.volume.regionBounds(regionBit(target.region))
-        : boundsOf(s.connectome.neurons.filter((n) => n.clusterKey === target.key));
+        : boundsOf(s.connectome.neurons.filter((n, i) => n.clusterKey === target.key && this.timeline.born(i)));
     if (b) this.camera.focusBounds(b);
   }
 
@@ -304,7 +329,7 @@ export class BrainController {
     let bestDepth = Infinity;
     const p = { x: 0, y: 0, depth: 0, scale: 0 };
     s.connectome.neurons.forEach((n, i) => {
-      if (!this.camera.projectTo(n, p)) return;
+      if (this.timeline.presence(i) < 0.3 || !this.camera.projectTo(n, p)) return;
       const radius = touch ? Math.max(TOUCH_MIN_RADIUS, n.r * p.scale) + TOUCH_SLOP : Math.max(4, n.r * p.scale) + 3;
       if (Math.hypot(p.x - sx, p.y - sy) <= radius && p.depth < bestDepth) {
         best = i;

@@ -1,4 +1,5 @@
 import { BrainController, KEY_SHORTCUTS } from "../../application/controllers/brain.controller";
+import { formatDate } from "../../application/mappers/format-date";
 import { TouchInteraction } from "../../application/controllers/touch-interaction";
 import type { SettingsService } from "../../application/contracts/settings";
 import type { Unsubscribe } from "../../domain/contracts/vault";
@@ -120,6 +121,10 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
   button("refresh-cw", "Regrow layout", () => controller.regrow());
   const firingBtn = button("activity", "Ambient firing", () => void controller.toggleAmbientFiring());
   const rotateBtn = button("rotate-3d", "Auto-rotate", () => void controller.toggleAutoRotate(), KEY_SHORTCUTS.autoRotate);
+  const timelineBtn = button("history", "Watch the brain grow (by note creation date)", () => {
+    controller.toggleTimeline();
+    syncTimeline();
+  });
   // Only shown in narrow panels (CSS): the legend is collapsed there to leave room for the brain.
   const legendBtn = button("list", "Legend", () => {
     const open = wrap.classList.toggle("is-legend-open");
@@ -145,6 +150,42 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
       search.value = "";
       controller.search("");
     }
+  });
+
+  // Timeline: a playhead over the notes' creation dates.
+  const bar = el("div", "brain-graph-timeline", wrap);
+  const playBtn = el("button", "clickable-icon brain-graph-btn", bar);
+  playBtn.type = "button";
+  const scrub = el("input", "brain-graph-timeline-scrub", bar);
+  scrub.type = "range";
+  scrub.min = "0";
+  scrub.max = "1000";
+  scrub.setAttribute("aria-label", "Brain timeline");
+  const when = el("span", "brain-graph-timeline-when", bar);
+  let shownTimeline = "";
+  const syncTimeline = () => {
+    const t = controller.timelineView();
+    timelineBtn.classList.toggle("is-hidden", !t.available);
+    const open = t.available && t.active;
+    bar.classList.toggle("is-visible", open);
+    setPressed(timelineBtn, open);
+    if (!open) return;
+    const key = `${t.progress}|${t.playing}|${t.shown}`;
+    if (key === shownTimeline) return;
+    shownTimeline = key;
+    if (host.ownerDocument.activeElement !== scrub || t.playing) scrub.value = String(Math.round(t.progress * 1000));
+    when.textContent = `${formatDate(Math.min(t.time, t.last))} · ${t.shown}/${t.total} notes`;
+    playBtn.replaceChildren();
+    ui.renderIcon(playBtn, t.playing ? "pause" : "play");
+    playBtn.setAttribute("aria-label", t.playing ? "Pause" : "Play history");
+  };
+  on(playBtn, "click", () => {
+    controller.toggleTimelinePlayback();
+    syncTimeline();
+  });
+  on(scrub, "input", () => {
+    controller.seekTimeline(Number(scrub.value) / 1000);
+    syncTimeline();
   });
 
   // Stats & legend.
@@ -176,6 +217,8 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
   };
   renderChrome();
   offs.push(controller.onGraphChanged(renderChrome));
+  offs.push(controller.onGraphChanged(syncTimeline));
+  syncTimeline();
 
   // Tooltip.
   const tooltip = el("div", "brain-graph-tooltip", wrap);
@@ -287,6 +330,7 @@ export function mountBrainPanel(host: HTMLElement, controller: BrainController, 
     last = t;
     if (!wrap.isConnected || wrap.offsetParent === null || contextLost) return;
     controller.step(dt);
+    syncTimeline();
     const scene = controller.scene();
     if (scene) renderer.render(scene);
   };

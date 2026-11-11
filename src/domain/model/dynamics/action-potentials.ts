@@ -75,11 +75,12 @@ export class ActionPotentials implements BrainFiring {
   }
 
   /** Fire a random (preferably connected) neuron with a deep cascade. */
-  fireRandom(): void {
+  fireRandom(eligible: (neuron: number) => boolean = () => true): void {
     const neurons = this.connectome.neurons;
-    if (!neurons.length) return;
-    const linked = neurons.map((n, i) => (n.degree ? i : -1)).filter((i) => i >= 0);
-    const pool = linked.length ? linked : neurons.map((_, i) => i);
+    const all = neurons.map((_, i) => i).filter(eligible);
+    if (!all.length) return;
+    const linked = all.filter((i) => neurons[i].degree);
+    const pool = linked.length ? linked : all;
     this.fire(pool[Math.floor(this.rng() * pool.length)], 4, true);
   }
 

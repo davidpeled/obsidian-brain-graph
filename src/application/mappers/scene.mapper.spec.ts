@@ -8,6 +8,7 @@ import { mulberry32 } from "../../domain/model/shared/random";
 import { R_FRONTAL, R_TEMPORAL } from "../../domain/contracts/anatomy";
 import { PARA_VAULT } from "../../test-support/fixtures";
 import { BrainController } from "../controllers/brain.controller";
+import { Timeline } from "../controllers/timeline";
 import { createBrainGraphService } from "../services/brain-graph.service";
 import { createSettingsService } from "../services/settings.service";
 import { FrameBuffer, toGraphView } from "./scene.mapper";
@@ -49,15 +50,63 @@ describe("toGraphView", () => {
   });
 });
 
+describe("timeline in the controller", () => {
+  const dated = () => {
+    const notes = PARA_VAULT.notes.map((n, i) => ({ ...n, created: (i + 1) * 864e5 }));
+    return { ...PARA_VAULT, notes };
+  };
+  async function datedSetup() {
+    const settings = await createSettingsService(new InMemorySettingsRepository({ ambientFiring: false, autoRotate: false }));
+    const graph = createBrainGraphService({ vault: new InMemoryVaultRepository(dated()), settings, random: mulberry32(1), refreshDelayMs: 10, schedule: realSchedule });
+    const controller = new BrainController({ graph, settings, workspace: new InMemoryWorkspaceGateway(), menu: new InMemoryContextMenu() });
+    controller.resize(1000, 760);
+    return { graph, controller };
+  }
+
+  it("hides unborn neurons from the scene and from picking", async () => {
+    const { graph, controller } = await datedSetup();
+    const s = graph.state!;
+    const at = (i: number) => controller.camera.project(s.connectome.neurons[i])!;
+    const target = s.connectome.neurons.length - 1;
+    const p = at(target);
+    controller.toggleTimeline();
+    expect(controller.hitTest(p.x, p.y)).toBeGreaterThanOrEqual(0);
+    controller.seekTimeline(0);
+    const scene = controller.scene()!;
+    expect([...scene.frame.presence].every((v) => v === 0)).toBe(true);
+    expect(controller.hitTest(p.x, p.y)).toBe(-1);
+    controller.seekTimeline(1);
+    expect([...controller.scene()!.frame.presence].every((v) => v === 1)).toBe(true);
+  });
+
+  it("only fires and flies to neurons that exist", async () => {
+    const { graph, controller } = await datedSetup();
+    controller.toggleTimeline();
+    controller.seekTimeline(0);
+    controller.fireRandom();
+    expect(graph.state!.firing.pulses).toHaveLength(0);
+    expect(graph.state!.connectome.neurons.every((n) => n.activation === 0)).toBe(true);
+    controller.search("Plan");
+    const eye = { ...controller.camera.target };
+    controller.focusFirstMatch();
+    expect(controller.camera.target).toEqual(eye); // nothing born: no fly-to
+  });
+
+  it("is unavailable when notes have no dates", async () => {
+    const { controller } = await setup();
+    expect(controller.timelineView().available).toBe(false);
+  });
+});
+
 describe("frame and versions", () => {
   it("copies positions and activation, reusing its buffers", async () => {
     const { graph } = await setup();
     const fb = new FrameBuffer();
     const s = graph.state!;
-    const a = fb.write(s);
+    const a = fb.write(s, new Timeline());
     s.connectome.neurons[0].x += 5;
     s.connectome.neurons[0].activation = 0.7;
-    const b = fb.write(s);
+    const b = fb.write(s, new Timeline());
     expect(b.positions).toBe(a.positions);
     expect(b.positions[0]).toBeCloseTo(s.connectome.neurons[0].x, 3);
     expect(b.activation[0]).toBeCloseTo(0.7, 5);

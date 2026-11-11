@@ -12,7 +12,8 @@ interface DomInfo {
 
 function createEl<K extends keyof HTMLElementTagNameMap>(this: Node, tag: K, info?: string | DomInfo): HTMLElementTagNameMap[K] {
   const o: DomInfo = typeof info === "string" ? { cls: info } : (info ?? {});
-  const el = (this.ownerDocument ?? (this as Document)).createElement(tag);
+  // This shim *is* Obsidian's createEl, so it cannot call it; the namespaced factory builds the same HTML element.
+  const el = (this.ownerDocument ?? (this as Document)).createElementNS("http://www.w3.org/1999/xhtml", tag) as HTMLElementTagNameMap[K];
   if (o.cls) el.className = Array.isArray(o.cls) ? o.cls.join(" ") : o.cls;
   if (o.text) el.textContent = o.text;
   if (o.title) el.title = o.title;
